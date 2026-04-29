@@ -30,15 +30,14 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 ENV DATA_DIR=/app/data
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+
 
 # Copy public assets (skills templates, imports, outputs — writable at runtime)
 COPY --from=builder /app/public ./public
 
 # Copy standalone server output
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 # Copy Prisma schema + client for runtime (db push + client usage)
 COPY --from=builder /app/prisma ./prisma
@@ -52,9 +51,6 @@ RUN chmod +x ./start.sh
 
 # Create writable directories for runtime data
 RUN mkdir -p /app/data /app/public/outputs /app/public/imports /app/public/skills
-RUN chown -R nextjs:nodejs /app/data /app/public /app/prisma
-
-USER nextjs
 
 EXPOSE 3000
 
