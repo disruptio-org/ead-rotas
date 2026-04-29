@@ -1,118 +1,225 @@
 "use client";
 
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Bot, Code2, ArrowRight, Play, Briefcase } from "lucide-react";
-import { launchDSCPlaneamento } from "@/app/actions/quickLaunch";
+import { Bot, Code2, ArrowRight, Briefcase } from "lucide-react";
+
+type Stats = {
+  activeAgents: number;
+  publishedSkills: number;
+  executionsToday: number;
+  successRate: number;
+};
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [launching, setLaunching] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
 
-  const handleLaunch = async () => {
-    setLaunching(true);
+  useEffect(() => {
+    fetch("/api/stats").then(r => r.json()).then(setStats).catch(() => {});
+  }, []);
+
+  const handleQuickLaunch = async () => {
     try {
-      const agentId = await launchDSCPlaneamento();
-      router.push(`/agents/${agentId}`);
-    } catch (e) {
-      alert("Erro ao iniciar launcher.");
-      setLaunching(false);
+      const res = await fetch("/api/agents");
+      const agents = await res.json();
+      if (agents.length > 0) {
+        router.push(`/agents/${agents[0].id}`);
+      } else {
+        router.push("/agents/new");
+      }
+    } catch {
+      router.push("/agents");
     }
   };
 
   return (
-    <div className="relative p-10 h-full w-full">
-      <div className="max-w-5xl mx-auto space-y-12 relative z-10">
-        
-        {/* Header Section */}
-        <div className="space-y-4">
-          <h1 className="text-4xl font-extrabold tracking-tight text-emerald-50">
-            Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600">Agents OS</span>
+    <div style={{ padding: '40px 48px', maxWidth: '960px', margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '36px' }}>
+        <div>
+          <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#1A1714', letterSpacing: '-0.02em', marginBottom: '6px' }}>
+            Bem-vindo ao <span style={{ color: '#D4460E' }}>Rotas</span>
           </h1>
-          <p className="text-lg text-zinc-400 max-w-2xl">
-            Sua plataforma para automatização e delegação de processos logísticos complexos. 
-            Transforme conhecimentos repetitivos em Agentes e Skills reutilizáveis.
+          <p style={{ color: '#7A7470', fontSize: '14.5px', lineHeight: 1.6, maxWidth: '480px' }}>
+            Gerencie agentes, skills e execuções da sua plataforma de automação inteligente.
           </p>
         </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '7px',
+          background: '#fff', border: '1px solid #E8E4DF', borderRadius: '20px',
+          padding: '6px 14px', fontSize: '12px', color: '#4A4744', fontWeight: 500,
+          whiteSpace: 'nowrap', marginTop: '4px',
+        }}>
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#2E7D52', display: 'inline-block' }} />
+          Sistema operacional
+        </div>
+      </div>
 
-        {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="group relative overflow-hidden rounded-3xl border border-zinc-800/50 bg-zinc-900/50 p-8 shadow-2xl transition-all hover:bg-zinc-800/80 hover:border-emerald-500/30">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="flex items-start justify-between">
-              <div className="space-y-4">
-                <div className="bg-emerald-500/10 p-3 w-max rounded-xl">
-                  <Bot className="w-8 h-8 text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Agentes Customizados</h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
-                    Configure agentes especialistas com instruções específicas de comportamento para orquestrar as suas Skills.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 flex gap-3">
-              <Link href="/agents/new" className="inline-flex items-center justify-center rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 transition-colors hover:bg-emerald-400">
-                Criar Agente
-              </Link>
-              <Link href="/agents" className="inline-flex items-center justify-center rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white">
-                Ver Todos
-              </Link>
-            </div>
+      {/* Action cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
+        {/* Agents card */}
+        <div
+          style={{
+            background: '#fff', borderRadius: '16px', border: '1px solid #E8E4DF',
+            padding: '28px', position: 'relative', overflow: 'hidden',
+            transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'default',
+            ...(hoveredCard === 'agents' ? { boxShadow: '0 8px 32px rgba(0,0,0,0.09)', transform: 'translateY(-2px)' } : {}),
+          }}
+          onMouseEnter={() => setHoveredCard('agents')}
+          onMouseLeave={() => setHoveredCard(null)}
+        >
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+            background: 'linear-gradient(90deg, #D4460E, #F97040)',
+            transition: 'opacity 0.2s', opacity: hoveredCard === 'agents' ? 1 : 0,
+          }} />
+          <div style={{
+            width: '44px', height: '44px', borderRadius: '12px',
+            background: 'rgba(212,70,14,0.1)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
+          }}>
+            <Bot size={22} color="#D4460E" />
           </div>
-
-          <div className="group relative overflow-hidden rounded-3xl border border-zinc-800/50 bg-zinc-900/50 p-8 shadow-2xl transition-all hover:bg-zinc-800/80 hover:border-indigo-500/30">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="flex items-start justify-between">
-              <div className="space-y-4">
-                <div className="bg-indigo-500/10 p-3 w-max rounded-xl">
-                  <Code2 className="w-8 h-8 text-indigo-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Skills Studio</h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
-                    Crie fluxos de trabalho (Skills) que aceitam ficheiros de entrada, usam LLMs para raciocínio e geram templates DOCX.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 flex gap-3">
-              <Link href="/skills/new" className="inline-flex items-center justify-center rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-400">
-                Nova Skill
-              </Link>
-              <Link href="/skills" className="inline-flex items-center justify-center rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white">
-                Ver Biblioteca
-              </Link>
-            </div>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1714', marginBottom: '8px', letterSpacing: '-0.01em' }}>
+            Agentes Customizados
+          </h2>
+          <p style={{ fontSize: '13.5px', color: '#7A7470', lineHeight: 1.65, marginBottom: '20px' }}>
+            Configure agentes inteligentes com instruções de sistema personalizadas e associe skills específicas a cada fluxo de trabalho.
+          </p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => router.push("/agents/new")}
+              style={{
+                background: '#D4460E', color: '#fff', border: 'none', borderRadius: '8px',
+                padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Criar Agente
+            </button>
+            <button
+              onClick={() => router.push("/agents")}
+              style={{
+                background: '#F4F2EE', color: '#4A4744', border: '1px solid #E8E4DF', borderRadius: '8px',
+                padding: '8px 16px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Ver Todos
+            </button>
           </div>
         </div>
 
-        {/* Quick Launch / Recent */}
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Casos de Uso Rápidos</h2>
+        {/* Skills card */}
+        <div
+          style={{
+            background: '#fff', borderRadius: '16px', border: '1px solid #E8E4DF',
+            padding: '28px', position: 'relative', overflow: 'hidden',
+            transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'default',
+            ...(hoveredCard === 'skills' ? { boxShadow: '0 8px 32px rgba(0,0,0,0.09)', transform: 'translateY(-2px)' } : {}),
+          }}
+          onMouseEnter={() => setHoveredCard('skills')}
+          onMouseLeave={() => setHoveredCard(null)}
+        >
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+            background: 'linear-gradient(90deg, #1E4DB7, #3B82F6)',
+            transition: 'opacity 0.2s', opacity: hoveredCard === 'skills' ? 1 : 0,
+          }} />
+          <div style={{
+            width: '44px', height: '44px', borderRadius: '12px',
+            background: 'rgba(30,77,183,0.08)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
+          }}>
+            <Code2 size={22} color="#1E4DB7" />
           </div>
-          <div 
-            onClick={handleLaunch}
-            className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-6 flex items-center justify-between hover:bg-zinc-800/60 transition-colors cursor-pointer group"
-          >
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center justify-center w-14 h-14 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300 group-hover:border-emerald-500/50 group-hover:text-emerald-400 transition-colors">
-                <Briefcase className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-zinc-100 group-hover:text-emerald-50">Planeamento DSC <span className="ml-2 text-xs font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">MVP</span></h4>
-                <p className="text-sm text-zinc-500 mt-1">Carregar Excel de serviços e gerar rotas otimizadas.</p>
-              </div>
-            </div>
-            <div className="flex items-center text-emerald-500 font-medium">
-              Executar <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </div>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1A1714', marginBottom: '8px', letterSpacing: '-0.01em' }}>
+            Skills Studio
+          </h2>
+          <p style={{ fontSize: '13.5px', color: '#7A7470', lineHeight: 1.65, marginBottom: '20px' }}>
+            Crie e gerencie skills reutilizáveis para automatizar documentos, análises e fluxos complexos com configurações avançadas de I/O.
+          </p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => router.push("/skills/new")}
+              style={{
+                background: '#1E4DB7', color: '#fff', border: 'none', borderRadius: '8px',
+                padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Nova Skill
+            </button>
+            <button
+              onClick={() => router.push("/skills")}
+              style={{
+                background: '#F4F2EE', color: '#4A4744', border: '1px solid #E8E4DF', borderRadius: '8px',
+                padding: '8px 16px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Ver Biblioteca
+            </button>
           </div>
         </div>
+      </div>
 
+      {/* Quick actions */}
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{ fontSize: '13px', fontWeight: 600, color: '#7A7470', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '14px' }}>
+          Casos de Uso Rápidos
+        </h2>
+        <div
+          style={{
+            background: '#fff', border: '1px solid #E8E4DF', borderRadius: '12px',
+            padding: '18px 22px', display: 'flex', alignItems: 'center', gap: '16px',
+            cursor: 'pointer', transition: 'all 0.15s',
+            ...(hoveredCard === 'quick' ? { boxShadow: '0 4px 20px rgba(0,0,0,0.07)', borderColor: '#D4460E' } : {}),
+          }}
+          onMouseEnter={() => setHoveredCard('quick')}
+          onMouseLeave={() => setHoveredCard(null)}
+          onClick={handleQuickLaunch}
+        >
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '10px',
+            background: 'rgba(212,70,14,0.08)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Briefcase size={20} color="#D4460E" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: '#1A1714', marginBottom: '3px' }}>Planeamento DSC</div>
+            <div style={{ fontSize: '12.5px', color: '#7A7470' }}>Executar o fluxo completo de planeamento e geração de documentos DSC</div>
+          </div>
+          <div style={{
+            background: 'rgba(212,70,14,0.1)', color: '#D4460E', borderRadius: '6px',
+            padding: '3px 8px', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em',
+          }}>
+            MVP
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', color: '#D4460E', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', gap: '4px' }}>
+            Executar <ArrowRight size={14} />
+          </div>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        {[
+          { label: 'Agentes ativos', value: stats?.activeAgents ?? '—', color: '#D4460E' },
+          { label: 'Skills publicadas', value: stats?.publishedSkills ?? '—', color: '#1E4DB7' },
+          { label: 'Execuções hoje', value: stats?.executionsToday ?? '—', color: '#2E7D52' },
+          { label: 'Taxa de sucesso', value: stats ? `${stats.successRate}%` : '—', color: '#B45309' },
+        ].map(stat => (
+          <div key={stat.label} style={{
+            background: '#fff', border: '1px solid #E8E4DF', borderRadius: '12px', padding: '18px 20px',
+          }}>
+            <div style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '4px', color: stat.color }}>
+              {stat.value}
+            </div>
+            <div style={{ fontSize: '12px', color: '#7A7470', fontWeight: 500 }}>
+              {stat.label}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -6,56 +6,38 @@ interface FileTreePreviewProps {
   files: string[];
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  "SKILL.md": "text-emerald-400",
-  agents: "text-blue-400",
-  scripts: "text-amber-400",
-  references: "text-purple-400",
-  assets: "text-pink-400",
+const CAT_COLORS: Record<string, string> = {
+  "SKILL.md": "#2E7D52",
+  agents:     "#1E4DB7",
+  scripts:    "#B45309",
+  references: "#7B61FF",
+  assets:     "#E8608C",
 };
 
 function getIcon(filePath: string) {
   const ext = filePath.split(".").pop()?.toLowerCase();
   switch (ext) {
-    case "md":
-      return <FileText className="w-4 h-4" />;
-    case "py":
-    case "js":
-    case "ts":
-    case "sh":
-      return <Code2 className="w-4 h-4" />;
-    case "yaml":
-    case "yml":
-    case "json":
-      return <FileText className="w-4 h-4" />;
-    case "png":
-    case "jpg":
-    case "jpeg":
-    case "svg":
-      return <Image className="w-4 h-4" />;
-    case "xlsx":
-    case "csv":
-      return <FileSpreadsheet className="w-4 h-4" />;
-    case "docx":
-      return <FileText className="w-4 h-4" />;
-    default:
-      return <File className="w-4 h-4" />;
+    case "md": return <FileText size={14} />;
+    case "py": case "js": case "ts": case "sh": return <Code2 size={14} />;
+    case "yaml": case "yml": case "json": return <FileText size={14} />;
+    case "png": case "jpg": case "jpeg": case "svg": return <Image size={14} />;
+    case "xlsx": case "csv": return <FileSpreadsheet size={14} />;
+    case "docx": return <FileText size={14} />;
+    default: return <File size={14} />;
   }
 }
 
-function getCategoryColor(filePath: string): string {
-  if (filePath === "SKILL.md") return CATEGORY_COLORS["SKILL.md"];
+function getColor(filePath: string): string {
+  if (filePath === "SKILL.md") return CAT_COLORS["SKILL.md"];
   const topFolder = filePath.split("/")[0];
-  return CATEGORY_COLORS[topFolder] || "text-zinc-400";
+  return CAT_COLORS[topFolder] || "#4A4744";
 }
 
 function buildTree(files: string[]): Map<string, string[]> {
   const tree = new Map<string, string[]>();
-  
   for (const file of files) {
     const parts = file.split("/");
     if (parts.length === 1) {
-      // Root-level file
       if (!tree.has("__root__")) tree.set("__root__", []);
       tree.get("__root__")!.push(file);
     } else {
@@ -64,66 +46,51 @@ function buildTree(files: string[]): Map<string, string[]> {
       tree.get(folder)!.push(parts.slice(1).join("/"));
     }
   }
-
   return tree;
 }
 
 export function FileTreePreview({ files }: FileTreePreviewProps) {
   const tree = buildTree(files);
-  const sortedFolders = Array.from(tree.keys()).sort((a, b) => {
+  const sorted = Array.from(tree.keys()).sort((a, b) => {
     if (a === "__root__") return -1;
     if (b === "__root__") return 1;
     return a.localeCompare(b);
   });
 
   return (
-    <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 font-mono text-sm">
-      <div className="text-xs text-zinc-500 uppercase tracking-wider font-medium mb-3">
+    <div style={{
+      background: '#1A1714', borderRadius: '10px', padding: '16px',
+      fontFamily: 'monospace', fontSize: '12.5px',
+    }}>
+      <div style={{ fontSize: '10px', color: '#9A9490', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600, marginBottom: '10px', fontFamily: 'inherit' }}>
         Estrutura do Arquivo
       </div>
-      <div className="space-y-1">
-        {sortedFolders.map((folder) => {
-          const folderFiles = tree.get(folder)!;
-
-          if (folder === "__root__") {
-            return folderFiles.map((file) => (
-              <div
-                key={file}
-                className={`flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-zinc-800/50 transition-colors ${getCategoryColor(file)}`}
-              >
-                {getIcon(file)}
-                <span className="truncate">{file}</span>
-              </div>
-            ));
-          }
-
-          const folderColor = CATEGORY_COLORS[folder] || "text-zinc-400";
-          return (
-            <div key={folder}>
-              <div
-                className={`flex items-center gap-2 py-1 px-2 rounded-lg ${folderColor} font-semibold`}
-              >
-                <Folder className="w-4 h-4" />
-                <span>{folder}/</span>
-                <span className="text-xs text-zinc-600 font-normal">
-                  ({folderFiles.length} ficheiro{folderFiles.length !== 1 ? "s" : ""})
-                </span>
-              </div>
-              <div className="ml-5 border-l border-zinc-800/60 pl-3 space-y-0.5">
-                {folderFiles.map((file) => (
-                  <div
-                    key={`${folder}/${file}`}
-                    className={`flex items-center gap-2 py-0.5 px-2 rounded-lg hover:bg-zinc-800/50 transition-colors ${folderColor} opacity-80`}
-                  >
-                    {getIcon(file)}
-                    <span className="truncate text-xs">{file}</span>
-                  </div>
-                ))}
-              </div>
+      {sorted.map((folder) => {
+        const folderFiles = tree.get(folder)!;
+        if (folder === "__root__") {
+          return folderFiles.map((file) => (
+            <div key={file} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '3px 6px', color: getColor(file) }}>
+              {getIcon(file)} <span>{file}</span>
             </div>
-          );
-        })}
-      </div>
+          ));
+        }
+        const color = CAT_COLORS[folder] || "#7A7470";
+        return (
+          <div key={folder}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '3px 6px', color, fontWeight: 600 }}>
+              <Folder size={14} /> {folder}/{' '}
+              <span style={{ color: '#555', fontWeight: 400, fontSize: '11px' }}>({folderFiles.length})</span>
+            </div>
+            <div style={{ marginLeft: '18px', borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: '10px' }}>
+              {folderFiles.map((file) => (
+                <div key={`${folder}/${file}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '2px 6px', color, opacity: 0.75, fontSize: '11.5px' }}>
+                  {getIcon(file)} <span>{file}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

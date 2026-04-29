@@ -22,56 +22,40 @@ interface ValidationPanelProps {
   skillId: string;
 }
 
-const SEVERITY_CONFIG = {
-  error: {
-    icon: XCircle,
-    color: "text-red-400",
-    bg: "bg-red-500/10",
-    border: "border-red-500/20",
-  },
-  warning: {
-    icon: AlertTriangle,
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-  },
-  info: {
-    icon: CheckCircle,
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
-  },
+const SEVERITY_STYLES: Record<string, { color: string; bg: string; border: string }> = {
+  error:   { color: '#DC2626', bg: 'rgba(220,38,38,0.06)', border: 'rgba(220,38,38,0.2)' },
+  warning: { color: '#B45309', bg: 'rgba(180,83,9,0.06)',  border: 'rgba(180,83,9,0.2)' },
+  info:    { color: '#1E4DB7', bg: 'rgba(30,77,183,0.06)', border: 'rgba(30,77,183,0.2)' },
 };
 
 function IssueList({ title, issues }: { title: string; issues: ValidationIssue[] }) {
   if (issues.length === 0) {
     return (
-      <div className="flex items-center gap-2 text-sm text-emerald-400/60">
-        <CheckCircle className="w-4 h-4" />
-        {title}: Sem problemas
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#2E7D52' }}>
+        <CheckCircle size={14} /> {title}: Sem problemas
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{title}</h4>
+    <div>
+      <h4 style={{ fontSize: '11px', fontWeight: 600, color: '#9A9490', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>
+        {title}
+      </h4>
       {issues.map((issue, i) => {
-        const config = SEVERITY_CONFIG[issue.severity];
-        const Icon = config.icon;
+        const s = SEVERITY_STYLES[issue.severity] || SEVERITY_STYLES.info;
+        const Icon = issue.severity === 'error' ? XCircle : issue.severity === 'warning' ? AlertTriangle : CheckCircle;
         return (
-          <div
-            key={`${issue.code}-${i}`}
-            className={`flex items-start gap-3 p-3 rounded-xl border ${config.bg} ${config.border}`}
-          >
-            <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${config.color}`} />
-            <div className="min-w-0">
-              <p className={`text-sm font-medium ${config.color}`}>{issue.message}</p>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-[10px] font-mono text-zinc-500">{issue.code}</span>
-                {issue.path && (
-                  <span className="text-[10px] font-mono text-zinc-600">→ {issue.path}</span>
-                )}
+          <div key={`${issue.code}-${i}`} style={{
+            display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 12px',
+            borderRadius: '8px', background: s.bg, border: `1px solid ${s.border}`, marginBottom: '6px',
+          }}>
+            <Icon size={14} color={s.color} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 500, color: s.color }}>{issue.message}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
+                <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#9A9490' }}>{issue.code}</span>
+                {issue.path && <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#9A9490' }}>→ {issue.path}</span>}
               </div>
             </div>
           </div>
@@ -99,69 +83,56 @@ export function ValidationPanel({ skillId }: ValidationPanelProps) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header + Trigger */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-            <Shield className="w-4 h-4 text-indigo-400" />
-            Validação da Skill
-          </h3>
-          <p className="text-xs text-zinc-600 mt-1">
-            Verifica estrutura, runtime e compatibilidade ChatGPT.
-          </p>
-        </div>
-        <button
-          onClick={runValidation}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-200 rounded-xl transition-colors"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              A validar...
-            </>
-          ) : (
-            <>
-              <Shield className="w-4 h-4" />
-              Executar Validação
-            </>
-          )}
-        </button>
+    <div style={{ background: '#fff', border: '1px solid #E8E4DF', borderRadius: '12px', padding: '18px' }}>
+      <div style={{ fontSize: '12px', fontWeight: 600, color: '#9A9490', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '12px' }}>
+        Validação
       </div>
 
-      {/* Results */}
-      {result && (
-        <div className="space-y-5">
-          {/* Summary Banner */}
-          <div
-            className={`flex items-center gap-3 p-4 rounded-xl border ${
-              result.valid
-                ? "bg-emerald-950/20 border-emerald-500/30"
-                : "bg-red-950/20 border-red-500/30"
-            }`}
-          >
-            {result.valid ? (
-              <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
-            ) : (
-              <XCircle className="w-5 h-5 text-red-400 shrink-0" />
-            )}
-            <p className={`text-sm font-medium ${result.valid ? "text-emerald-300" : "text-red-300"}`}>
-              {result.summary}
-            </p>
-          </div>
-
-          {/* Issue Categories */}
-          <IssueList title="Structural" issues={result.structural} />
-          <IssueList title="Runtime" issues={result.runtime} />
-          <IssueList title="Compatibility" issues={result.compatibility} />
+      {!result && !loading && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#B45309', flexShrink: 0 }} />
+          <span style={{ fontSize: '13px', color: '#4A4744' }}>Aguarda validação</span>
         </div>
       )}
 
-      {!result && !loading && (
-        <div className="text-center py-12 text-zinc-600 text-sm">
-          <Shield className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          Execute a validação para verificar a integridade da skill.
+      {result && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: result.valid ? '#2E7D52' : '#DC2626', flexShrink: 0 }} />
+          <span style={{ fontSize: '13px', color: '#4A4744' }}>
+            {result.valid ? 'Skill validada' : 'Problemas encontrados'}
+          </span>
+        </div>
+      )}
+
+      <button
+        onClick={runValidation}
+        disabled={loading}
+        style={{
+          width: '100%', background: '#F4F2EE', border: '1px solid #E8E4DF',
+          borderRadius: '8px', padding: '8px', fontSize: '12.5px', fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', color: '#4A4744',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+        }}
+      >
+        {loading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> A validar...</> : 'Executar validação'}
+      </button>
+
+      {result && (
+        <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{
+            padding: '10px 12px', borderRadius: '8px',
+            background: result.valid ? 'rgba(46,125,82,0.06)' : 'rgba(220,38,38,0.06)',
+            border: `1px solid ${result.valid ? 'rgba(46,125,82,0.2)' : 'rgba(220,38,38,0.2)'}`,
+            display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
+            {result.valid ? <CheckCircle size={14} color="#2E7D52" /> : <XCircle size={14} color="#DC2626" />}
+            <span style={{ fontSize: '12.5px', fontWeight: 500, color: result.valid ? '#2E7D52' : '#DC2626' }}>
+              {result.summary}
+            </span>
+          </div>
+          <IssueList title="Structural" issues={result.structural} />
+          <IssueList title="Runtime" issues={result.runtime} />
+          <IssueList title="Compatibility" issues={result.compatibility} />
         </div>
       )}
     </div>

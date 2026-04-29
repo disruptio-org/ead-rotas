@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Code2, Save, ArrowLeft, Trash2, Loader2, CheckCircle,
-  Bot, Tag, Hash, Info, Package
+  Code2, Save, ArrowLeft, Trash2, Loader2, Check,
+  Bot, Package, Upload
 } from "lucide-react";
 import { SkillTabs, type TabId } from "@/components/skills/SkillTabs";
 import { SkillMdEditor } from "@/components/skills/SkillMdEditor";
@@ -44,12 +44,12 @@ type SkillData = {
   agentSkills: { agent: { id: string; name: string } }[];
 };
 
-const STATUS_BADGES: Record<string, { color: string; label: string }> = {
-  draft: { color: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20", label: "Draft" },
-  validated: { color: "bg-blue-500/10 text-blue-400 border-blue-500/20", label: "Validated" },
-  published: { color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", label: "Published" },
-  deprecated: { color: "bg-amber-500/10 text-amber-400 border-amber-500/20", label: "Deprecated" },
-  archived: { color: "bg-red-500/10 text-red-400 border-red-500/20", label: "Archived" },
+const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  draft:      { bg: 'rgba(0,0,0,0.05)',      text: '#4A4744',  label: 'Draft' },
+  validated:  { bg: 'rgba(30,77,183,0.08)',  text: '#1E4DB7',  label: 'Validated' },
+  published:  { bg: 'rgba(46,125,82,0.08)',  text: '#2E7D52',  label: 'Published' },
+  deprecated: { bg: 'rgba(180,83,9,0.08)',   text: '#B45309',  label: 'Deprecated' },
+  archived:   { bg: 'rgba(220,38,38,0.08)',  text: '#DC2626',  label: 'Archived' },
 };
 
 export default function SkillEditorPage() {
@@ -66,7 +66,6 @@ export default function SkillEditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("overview");
 
-  // Editable fields
   const [displayName, setDisplayName] = useState("");
   const [description, setDescription] = useState("");
   const [skillMdContent, setSkillMdContent] = useState("");
@@ -103,11 +102,7 @@ export default function SkillEditorPage() {
       const res = await fetch(`/api/skills/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          displayName,
-          description,
-          skillMdContent,
-        }),
+        body: JSON.stringify({ displayName, description, skillMdContent }),
       });
       if (!res.ok) throw new Error("Falha ao guardar.");
       setSaved(true);
@@ -152,235 +147,248 @@ export default function SkillEditorPage() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center h-full text-zinc-500">
-      <Loader2 className="animate-spin w-6 h-6 mr-3" /> A carregar skill...
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#7A7470' }}>
+      <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', marginRight: '10px' }} /> A carregar skill...
     </div>
   );
 
   if (error && !skill) return (
-    <div className="flex flex-col items-center justify-center h-full gap-4 text-zinc-500">
-      <p className="text-red-400">{error}</p>
-      <Link href="/skills" className="text-sm text-indigo-400 hover:underline">← Voltar às Skills</Link>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px', color: '#9A9490' }}>
+      <p style={{ color: '#DC2626' }}>{error}</p>
+      <Link href="/skills" style={{ color: '#1E4DB7', fontSize: '13px', textDecoration: 'none' }}>← Voltar às Skills</Link>
     </div>
   );
 
   const currentVersion = skill?.versions?.[0];
-  const statusBadge = STATUS_BADGES[skill?.status || "draft"];
+  const sc = STATUS_COLORS[skill?.status || "draft"];
 
   return (
-    <div className="flex flex-col h-full w-full">
-      {/* Header Bar */}
-      <div className="shrink-0 border-b border-zinc-800 bg-zinc-950 px-6 py-4 flex justify-between items-center z-10">
-        <div className="flex items-center gap-4">
-          <Link href="/skills" className="text-zinc-500 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#F4F2EE' }}>
+      {/* Header */}
+      <div style={{
+        height: '56px', background: '#fff', borderBottom: '1px solid #E8E4DF',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 20px', flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Link href="/skills" style={{
+            width: '32px', height: '32px', borderRadius: '8px', background: '#F4F2EE',
+            border: '1px solid #E8E4DF', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: '#4A4744', textDecoration: 'none',
+          }}>
+            <ArrowLeft size={15} />
           </Link>
-          <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-400">
-            <Code2 className="w-5 h-5" />
+          <div style={{
+            width: '30px', height: '30px', borderRadius: '8px',
+            background: 'rgba(30,77,183,0.08)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', color: '#1E4DB7',
+          }}>
+            <Code2 size={16} />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white leading-tight">{skill?.displayName}</h1>
-            <div className="flex items-center gap-3 mt-0.5">
-              <span className="text-xs font-mono text-zinc-500">{skill?.slug}</span>
+            <div style={{ fontWeight: 700, fontSize: '14px', color: '#1A1714' }}>{skill?.displayName}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+              <code style={{ fontSize: '11px', color: '#9A9490', fontFamily: 'monospace' }}>{skill?.slug}</code>
               {currentVersion && (
-                <span className="text-xs font-mono text-zinc-600">v{currentVersion.versionNumber}</span>
+                <span style={{ background: '#F4F2EE', color: '#6B6764', borderRadius: '4px', padding: '1px 6px', fontSize: '10.5px', fontFamily: 'monospace' }}>
+                  v{currentVersion.versionNumber}
+                </span>
               )}
-              <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${statusBadge.color}`}>
-                {statusBadge.label}
+              <span style={{ background: sc.bg, color: sc.text, borderRadius: '20px', padding: '2px 8px', fontSize: '10.5px', fontWeight: 600 }}>
+                {sc.label}
               </span>
               {skill?.sourceType === "imported_chatgpt" && (
-                <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
-                  <Package className="w-3 h-3" /> Imported
+                <span style={{ background: 'rgba(180,83,9,0.08)', color: '#B45309', borderRadius: '4px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 500 }}>
+                  Importado
                 </span>
               )}
             </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400 hover:bg-red-500/10 px-3 py-2 rounded-xl transition-colors disabled:opacity-40"
-          >
-            <Trash2 className="w-4 h-4" />
-            {deleting ? "..." : "Eliminar"}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={handleDelete} disabled={deleting} style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'none', border: '1px solid rgba(220,38,38,0.25)',
+            color: '#DC2626', borderRadius: '8px', padding: '7px 14px',
+            fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            <Trash2 size={13} /> Eliminar
           </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-bold bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white rounded-xl transition-colors shadow-sm"
-          >
-            {saving ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> A guardar...</>
-            ) : saved ? (
-              <><CheckCircle className="w-4 h-4" /> Guardado!</>
-            ) : (
-              <><Save className="w-4 h-4" /> Guardar</>
-            )}
+          <button onClick={handleSave} disabled={saving} style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: '#1E4DB7', color: '#fff', border: 'none',
+            borderRadius: '8px', padding: '7px 16px',
+            fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            {saved ? <><Check size={14} /> Guardado!</> : <><Save size={14} /> Guardar</>}
           </button>
         </div>
       </div>
-
-      {/* Error Banner */}
-      {error && (
-        <div className="shrink-0 mx-6 mt-4 rounded-xl border border-red-500/30 bg-red-950/20 px-4 py-3 text-sm text-red-400 font-mono">
-          {error}
-        </div>
-      )}
 
       {/* Tabs */}
-      <div className="shrink-0 px-6 pt-4">
-        <SkillTabs activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
+      <SkillTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="max-w-4xl mx-auto">
-
-          {/* ===== OVERVIEW ===== */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '28px' }}>
+        <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+          {/* Overview */}
           {activeTab === "overview" && (
-            <div className="space-y-6">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-zinc-300">Nome da Skill</label>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-zinc-300">Descrição (trigger principal)</label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-                  placeholder="Descreva quando e como esta skill deve ser usada..."
-                />
-                <p className="text-xs text-zinc-600">Esta descrição serve como trigger — o runtime usa-a para decidir quando ativar a skill.</p>
-              </div>
-
-              {/* Agents using this skill */}
-              {skill?.agentSkills && skill.agentSkills.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-emerald-400" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '24px' }}>
+              <div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#4A4744', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                    Nome da Skill
+                  </label>
+                  <input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    style={{
+                      width: '100%', background: '#fff', border: '1px solid #E8E4DF',
+                      borderRadius: '9px', padding: '10px 14px', fontSize: '13.5px',
+                      color: '#1A1714', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#4A4744', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                    Descrição (trigger)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    style={{
+                      width: '100%', background: '#fff', border: '1px solid #E8E4DF',
+                      borderRadius: '9px', padding: '10px 14px', fontSize: '13px',
+                      color: '#1A1714', fontFamily: 'inherit', outline: 'none',
+                      resize: 'vertical', lineHeight: 1.6, boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#4A4744', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
                     Agentes associados
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {skill.agentSkills.map((as) => (
-                      <Link
-                        key={as.agent.id}
-                        href={`/agents/${as.agent.id}`}
-                        className="px-3 py-1.5 text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/20 transition-colors"
-                      >
-                        {as.agent.name}
-                      </Link>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {skill?.agentSkills?.length === 0 && (
+                      <p style={{ fontSize: '12.5px', color: '#9A9490', fontStyle: 'italic' }}>Nenhum agente associado.</p>
+                    )}
+                    {skill?.agentSkills?.map((as_) => (
+                      <div key={as_.agent.id} style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '8px 12px', background: '#F9F8F5', borderRadius: '8px',
+                      }}>
+                        <Bot size={13} color="#D4460E" />
+                        <span style={{ fontSize: '13px', color: '#4A4744' }}>{as_.agent.name}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
-              )}
-
-              {/* Validation */}
-              <ValidationPanel skillId={id} />
-            </div>
-          )}
-
-          {/* ===== INSTRUCTIONS ===== */}
-          {activeTab === "instructions" && (
-            <SkillMdEditor
-              content={skillMdContent}
-              onChange={setSkillMdContent}
-            />
-          )}
-
-          {/* ===== REFERENCES ===== */}
-          {activeTab === "references" && (
-            <FileManager
-              skillId={id}
-              files={currentVersion?.files || []}
-              fileType="reference"
-              onFilesChange={fetchSkill}
-            />
-          )}
-
-          {/* ===== ASSETS ===== */}
-          {activeTab === "assets" && (
-            <FileManager
-              skillId={id}
-              files={currentVersion?.files || []}
-              fileType="asset"
-              onFilesChange={fetchSkill}
-            />
-          )}
-
-          {/* ===== SCRIPTS ===== */}
-          {activeTab === "scripts" && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                  <Code2 className="w-4 h-4 text-indigo-400" />
-                  Scripts Integrados
-                </h3>
-                <p className="text-xs text-zinc-600 mt-1">
-                  Scripts built-in disponíveis para uso. Referenciados por nome no SKILL.md.
-                </p>
               </div>
-              {BUILTIN_SCRIPTS.map((script) => (
-                <div
-                  key={script.key}
-                  className="flex items-start gap-4 p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl"
-                >
-                  <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-400 shrink-0">
-                    <Code2 className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-bold text-zinc-200">{script.displayName}</span>
-                      <span className="text-xs font-mono text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded">{script.key}</span>
-                    </div>
-                    <p className="text-xs text-zinc-500">{script.description}</p>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-zinc-600">
-                      <span>Input: {script.inputTypes.join(", ")}</span>
-                      <span>Output: {script.outputTypes.join(", ")}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              <div>
+                <ValidationPanel skillId={id} />
+              </div>
             </div>
           )}
 
-          {/* ===== I/O CONFIG ===== */}
+          {/* Instructions */}
+          {activeTab === "instructions" && (
+            <div>
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#4A4744', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                SKILL.md — Instruções
+              </label>
+              <SkillMdEditor value={skillMdContent} onChange={setSkillMdContent} />
+            </div>
+          )}
+
+          {/* References */}
+          {activeTab === "references" && currentVersion && (
+            <FileManager
+              skillId={id}
+              versionId={currentVersion.id}
+              fileType="reference"
+              files={currentVersion.files.filter(f => f.fileType === "reference")}
+              onRefresh={fetchSkill}
+            />
+          )}
+
+          {/* Assets */}
+          {activeTab === "assets" && currentVersion && (
+            <FileManager
+              skillId={id}
+              versionId={currentVersion.id}
+              fileType="asset"
+              files={currentVersion.files.filter(f => f.fileType === "asset")}
+              onRefresh={fetchSkill}
+            />
+          )}
+
+          {/* Scripts */}
+          {activeTab === "scripts" && (
+            <div>
+              {BUILTIN_SCRIPTS.length === 0 ? (
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  minHeight: '200px', color: '#9A9490', border: '2px dashed #E8E4DF', borderRadius: '12px',
+                }}>
+                  <Code2 size={24} />
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#4A4744', marginTop: '12px' }}>Nenhum script disponível</div>
+                  <div style={{ fontSize: '12.5px', color: '#9A9490', marginTop: '4px' }}>Os scripts são definidos na importação da skill.</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {BUILTIN_SCRIPTS.map((script) => (
+                    <div key={script.id} style={{
+                      background: '#fff', border: '1px solid #E8E4DF', borderRadius: '10px', padding: '14px 16px',
+                    }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#1A1714', marginBottom: '4px' }}>{script.name}</div>
+                      <div style={{ fontSize: '12px', color: '#7A7470' }}>{script.description}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* I/O Config */}
           {activeTab === "io" && (
-            <div className="space-y-6">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-zinc-300">Input Schema (JSON)</label>
-                <p className="text-xs text-zinc-600 mb-2">Define os tipos de input que esta skill aceita.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#4A4744', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                  Input Schema (JSON)
+                </label>
                 <textarea
-                  rows={8}
+                  rows={10}
                   value={inputSchema}
                   onChange={(e) => setInputSchema(e.target.value)}
-                  spellCheck={false}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-emerald-300 font-mono text-sm leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  style={{
+                    width: '100%', background: '#1A1714', border: 'none', borderRadius: '12px',
+                    padding: '16px 20px', fontSize: '12.5px', color: '#A8D5B5',
+                    fontFamily: 'monospace', outline: 'none', resize: 'vertical',
+                    lineHeight: 1.65, boxSizing: 'border-box',
+                  }}
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-zinc-300">Output Schema (JSON)</label>
-                <p className="text-xs text-zinc-600 mb-2">Define a estrutura esperada dos outputs gerados.</p>
+              <div>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#4A4744', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                  Output Schema (JSON)
+                </label>
                 <textarea
-                  rows={8}
+                  rows={10}
                   value={outputSchema}
                   onChange={(e) => setOutputSchema(e.target.value)}
-                  spellCheck={false}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-emerald-300 font-mono text-sm leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  style={{
+                    width: '100%', background: '#1A1714', border: 'none', borderRadius: '12px',
+                    padding: '16px 20px', fontSize: '12.5px', color: '#A8D5B5',
+                    fontFamily: 'monospace', outline: 'none', resize: 'vertical',
+                    lineHeight: 1.65, boxSizing: 'border-box',
+                  }}
                 />
               </div>
             </div>
           )}
 
-          {/* ===== VERSIONS ===== */}
+          {/* Versions */}
           {activeTab === "versions" && skill && (
             <VersionTimeline
               versions={skill.versions}

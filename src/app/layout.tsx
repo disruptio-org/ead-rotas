@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Figtree } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 
-const inter = Inter({ subsets: ["latin"] });
+const figtree = Figtree({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Agents OS",
-  description: "Plataforma de Agentes Customizados e Skills Estilo ChatGPT",
+  title: "Rotas — by Papiro",
+  description: "Plataforma de Agentes e Skills para automação inteligente de processos logísticos.",
 };
 
 export default function RootLayout({
@@ -16,11 +16,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt" className={`${inter.className} h-full antialiased dark`}>
-      <body className="flex h-full min-h-screen bg-zinc-950 text-zinc-50 selection:bg-emerald-500/30">
+    <html lang="pt" className={`${figtree.className} h-full`}>
+      <body className="flex h-full min-h-screen" style={{ background: '#F4F2EE', color: '#1A1714', fontFamily: 'inherit' }}>
         <Sidebar />
-        <main className="flex-1 overflow-y-auto bg-zinc-900/40 relative">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+        <main className="flex-1 overflow-y-auto relative">
           {children}
         </main>
       </body>

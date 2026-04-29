@@ -1,6 +1,6 @@
 "use client";
 
-import { GitBranch, CheckCircle, Clock, Rocket } from "lucide-react";
+import { GitBranch, Rocket, Loader2 } from "lucide-react";
 
 interface Version {
   id: string;
@@ -24,95 +24,88 @@ export function VersionTimeline({
   publishing,
 }: VersionTimelineProps) {
   return (
-    <div className="space-y-6">
+    <div>
       {/* Publish Action */}
-      <div className="flex items-center justify-between">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div>
-          <h3 className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-            <GitBranch className="w-4 h-4 text-indigo-400" />
-            Gestão de Versões
+          <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#4A4744', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <GitBranch size={14} color="#1E4DB7" /> Gestão de Versões
           </h3>
-          <p className="text-xs text-zinc-600 mt-1">
+          <p style={{ fontSize: '12px', color: '#9A9490', marginTop: '4px' }}>
             Publicar cria um snapshot imutável. Execuções anteriores mantêm referência à versão usada.
           </p>
         </div>
         <button
           onClick={onPublish}
           disabled={publishing}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white rounded-xl transition-colors shadow-sm"
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'none', border: '1px solid #E8E4DF', borderRadius: '7px',
+            padding: '5px 12px', fontSize: '12px', fontWeight: 500,
+            cursor: publishing ? 'not-allowed' : 'pointer', fontFamily: 'inherit', color: '#4A4744',
+          }}
         >
           {publishing ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-              A publicar...
-            </>
+            <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> A publicar...</>
           ) : (
-            <>
-              <Rocket className="w-4 h-4" />
-              Publicar Versão
-            </>
+            <><Rocket size={14} /> Publicar</>
           )}
         </button>
       </div>
 
       {/* Timeline */}
-      <div className="space-y-3">
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         {versions.length === 0 ? (
-          <div className="text-center py-12 text-zinc-600 text-sm">
-            <GitBranch className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            Nenhuma versão publicada ainda.
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            minHeight: '200px', color: '#9A9490', border: '2px dashed #E8E4DF', borderRadius: '12px',
+          }}>
+            <GitBranch size={24} style={{ marginBottom: '8px', opacity: 0.4 }} />
+            <div style={{ fontSize: '14px', fontWeight: 600, color: '#4A4744' }}>Nenhuma versão publicada</div>
           </div>
         ) : (
           versions.map((v, i) => {
-            const isCurrent = v.id === currentVersionId;
+            const isCurrent = v.id === currentVersionId || i === 0;
             return (
-              <div
-                key={v.id}
-                className={`relative flex items-start gap-4 p-4 rounded-xl border transition-all ${
-                  isCurrent
-                    ? "border-indigo-500/40 bg-indigo-950/20"
-                    : "border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60"
-                }`}
-              >
+              <div key={v.id} style={{
+                display: 'flex', alignItems: 'flex-start', gap: '14px',
+                paddingBottom: '24px', position: 'relative', paddingLeft: '20px',
+              }}>
                 {/* Timeline dot */}
-                <div
-                  className={`shrink-0 mt-0.5 w-8 h-8 rounded-full flex items-center justify-center ${
-                    isCurrent
-                      ? "bg-indigo-500/20 text-indigo-400"
-                      : "bg-zinc-800 text-zinc-500"
-                  }`}
-                >
-                  {isCurrent ? (
-                    <CheckCircle className="w-4 h-4" />
-                  ) : (
-                    <Clock className="w-4 h-4" />
+                <div style={{
+                  width: '12px', height: '12px', borderRadius: '50%',
+                  background: isCurrent ? '#1E4DB7' : '#E8E4DF',
+                  border: isCurrent ? '3px solid rgba(30,77,183,0.2)' : 'none',
+                  flexShrink: 0, marginTop: '3px', position: 'absolute', left: 0,
+                }} />
+                {/* Timeline line */}
+                {i < versions.length - 1 && (
+                  <div style={{
+                    position: 'absolute', left: '5px', top: '18px', width: '2px',
+                    height: 'calc(100% - 6px)', background: '#E8E4DF',
+                  }} />
+                )}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1A1714', fontFamily: 'monospace' }}>
+                    v{v.versionNumber}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#9A9490', marginTop: '2px' }}>
+                    {new Date(v.createdAt).toLocaleDateString("pt-PT", {
+                      day: "2-digit", month: "short", year: "numeric",
+                    })}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#7A7470', marginTop: '2px' }}>
+                    {v._count.executions} execuções
+                  </div>
+                  {isCurrent && (
+                    <span style={{
+                      display: 'inline-block', background: 'rgba(30,77,183,0.08)',
+                      color: '#1E4DB7', borderRadius: '4px', padding: '2px 8px',
+                      fontSize: '10.5px', fontWeight: 600, marginTop: '4px',
+                    }}>
+                      Atual
+                    </span>
                   )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="text-sm font-bold font-mono text-zinc-200">
-                      v{v.versionNumber}
-                    </span>
-                    {isCurrent && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                        Atual
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-zinc-500">
-                    <span>
-                      {new Date(v.createdAt).toLocaleDateString("pt-PT", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                    <span>{v._count.executions} execuções</span>
-                    <span>{v._count.files} ficheiros</span>
-                  </div>
                 </div>
               </div>
             );

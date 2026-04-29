@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bot, Save, ArrowLeft } from "lucide-react";
+import { Bot, Save, ArrowLeft, Loader2, Check } from "lucide-react";
 import Link from "next/link";
 
 export default function NewAgentPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    systemInstructions: "You are a helpful operational agent."
+    systemInstructions: "Você é um assistente especializado da Papiro. A sua função é processar dados fornecidos pelo utilizador e gerar documentos estruturados seguindo as instruções da skill associada.\n\nSempre responda em português europeu.\nSeja conciso, preciso e profissional.",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,11 +25,12 @@ export default function NewAgentPage() {
         body: JSON.stringify(formData),
       });
       if (res.ok) {
-        router.push("/agents");
+        setSaved(true);
+        setTimeout(() => router.push("/agents"), 1500);
       } else {
         alert("Erro ao criar agente.");
       }
-    } catch (e) {
+    } catch {
       alert("Erro ao comunicar com o servidor.");
     } finally {
       setLoading(false);
@@ -36,78 +38,121 @@ export default function NewAgentPage() {
   };
 
   return (
-    <div className="p-10 w-full h-full">
-      <div className="max-w-3xl mx-auto space-y-8">
-        
-        <Link href="/agents" className="inline-flex items-center text-sm font-medium text-zinc-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar a Agentes
-        </Link>
-        
-        <div className="border-b border-zinc-800 pb-6 flex items-center space-x-4">
-          <div className="bg-emerald-500/10 p-3 rounded-2xl text-emerald-400">
-            <Bot className="w-8 h-8" />
+    <div style={{ padding: '40px 48px', maxWidth: '900px', margin: '0 auto' }}>
+      <Link
+        href="/agents"
+        style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          color: '#7A7470', textDecoration: 'none', fontSize: '13px', fontWeight: 500,
+          paddingBottom: '24px', marginLeft: '-2px',
+        }}
+      >
+        <ArrowLeft size={15} /> Voltar a Agentes
+      </Link>
+
+      <div style={{
+        background: '#fff', borderRadius: '16px', border: '1px solid #E8E4DF',
+        overflow: 'hidden', maxWidth: '640px',
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '16px',
+          padding: '28px', borderBottom: '1px solid #F4F2EE',
+        }}>
+          <div style={{
+            width: '52px', height: '52px', borderRadius: '14px',
+            background: 'rgba(212,70,14,0.08)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', color: '#D4460E', flexShrink: 0,
+          }}>
+            <Bot size={24} />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Criar Novo Agente</h1>
-            <p className="text-zinc-400 mt-1">Configure a identidade fundamental e propósito do seu agente.</p>
+            <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#1A1714', letterSpacing: '-0.02em', marginBottom: '6px' }}>
+              Criar Novo Agente
+            </h1>
+            <p style={{ color: '#7A7470', fontSize: '14px' }}>
+              Defina as instruções de sistema e associe skills ao seu agente.
+            </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-zinc-300">Nome do Agente</label>
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ padding: '28px' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A4744', marginBottom: '7px' }}>
+              Nome do Agente <span style={{ color: '#D4460E' }}>*</span>
+            </label>
             <input
               required
               type="text"
-              placeholder="Ex: Planeamento Operacional DSC"
+              placeholder="ex. DSC Planner"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+              style={{
+                width: '100%', background: '#F9F8F5', border: '1px solid #E8E4DF',
+                borderRadius: '9px', padding: '10px 14px', fontSize: '13.5px',
+                color: '#1A1714', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+              }}
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-zinc-300">Descrição Curta</label>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A4744', marginBottom: '7px' }}>
+              Descrição Curta <span style={{ color: '#D4460E' }}>*</span>
+            </label>
             <input
               required
               type="text"
-              placeholder="Uma frase sobre o propósito deste agente"
+              placeholder="Breve descrição do propósito do agente"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+              style={{
+                width: '100%', background: '#F9F8F5', border: '1px solid #E8E4DF',
+                borderRadius: '9px', padding: '10px 14px', fontSize: '13.5px',
+                color: '#1A1714', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+              }}
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-zinc-300">Instruções de Sistema Base (Prompt)</label>
-            <p className="text-xs text-zinc-500 mb-2">Comportamento de alto nível que precede qualquer skill específica.</p>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A4744', marginBottom: '7px' }}>
+              Instruções de Sistema Base{' '}
+              <span style={{ color: '#9A9490', fontWeight: 400, fontSize: '12px' }}>(Prompt)</span>
+            </label>
             <textarea
               required
-              rows={5}
-              placeholder="És um coordenador logístico encarregue de otimizar..."
+              rows={6}
               value={formData.systemInstructions}
               onChange={(e) => setFormData({ ...formData, systemInstructions: e.target.value })}
-              className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-mono text-sm leading-relaxed resize-none"
+              style={{
+                width: '100%', background: '#F9F8F5', border: '1px solid #E8E4DF',
+                borderRadius: '9px', padding: '10px 14px', fontSize: '13px',
+                color: '#1A1714', fontFamily: 'monospace', outline: 'none',
+                resize: 'vertical', lineHeight: 1.6, boxSizing: 'border-box',
+              }}
             />
           </div>
 
-          <div className="pt-6 border-t border-zinc-800 flex justify-end">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
             <button
               type="submit"
-              disabled={loading}
-              className="inline-flex items-center rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-emerald-950 transition-colors hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || !formData.name}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '7px',
+                background: (loading || !formData.name) ? '#E8E4DF' : '#D4460E',
+                color: (loading || !formData.name) ? '#9A9490' : '#fff',
+                border: 'none', borderRadius: '9px', padding: '10px 20px',
+                fontSize: '13px', fontWeight: 600,
+                cursor: (loading || !formData.name) ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-950 mr-2"></div>
-              ) : (
-                <Save className="w-5 h-5 mr-2" />
-              )}
-              {loading ? "A Guardar..." : "Criar Agente"}
+              {loading ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> A criar...</>
+                : saved ? <><Check size={15} /> Criado!</>
+                : <><Save size={15} /> Criar Agente</>}
             </button>
           </div>
         </form>
-
       </div>
     </div>
   );

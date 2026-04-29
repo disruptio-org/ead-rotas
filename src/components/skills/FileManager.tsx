@@ -13,35 +13,25 @@ interface FileRecord {
 
 interface FileManagerProps {
   skillId: string;
+  versionId: string;
   files: FileRecord[];
   fileType: "reference" | "asset" | "script";
-  onFilesChange: () => void;
+  onRefresh: () => void;
+  // Legacy support
+  onFilesChange?: () => void;
 }
 
-const FILE_TYPE_ICONS: Record<string, typeof File> = {
-  reference: FileText,
-  asset: Image,
-  script: FileCode,
-};
-
 const FILE_TYPE_LABELS: Record<string, string> = {
-  reference: "Referências",
+  reference: "Documentos de Referência",
   asset: "Assets",
   script: "Scripts",
 };
 
-const FILE_TYPE_DESCRIPTIONS: Record<string, string> = {
-  reference: "Documentos de conhecimento auxiliar — regras de negócio, schemas, glossários.",
-  asset: "Ficheiros para output ou apoio — templates DOCX, logos, imagens.",
-  script: "Lógica executável registada — parsers, geradores, validadores.",
-};
-
-export function FileManager({ skillId, files, fileType, onFilesChange }: FileManagerProps) {
+export function FileManager({ skillId, files, fileType, onRefresh, onFilesChange }: FileManagerProps) {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const Icon = FILE_TYPE_ICONS[fileType] || File;
+  const refresh = onRefresh || onFilesChange || (() => {});
   const filteredFiles = files.filter((f) => f.fileType === fileType);
 
   const handleUpload = useCallback(
@@ -52,29 +42,23 @@ export function FileManager({ skillId, files, fileType, onFilesChange }: FileMan
           const formData = new FormData();
           formData.append("file", file);
           formData.append("fileType", fileType);
-
-          await fetch(`/api/skills/${skillId}/files`, {
-            method: "POST",
-            body: formData,
-          });
+          await fetch(`/api/skills/${skillId}/files`, { method: "POST", body: formData });
         }
-        onFilesChange();
+        refresh();
       } catch (e) {
         console.error("Upload failed:", e);
       } finally {
         setUploading(false);
       }
     },
-    [skillId, fileType, onFilesChange]
+    [skillId, fileType, refresh]
   );
 
   const handleDelete = async (fileId: string) => {
     if (!confirm("Eliminar este ficheiro?")) return;
     try {
-      await fetch(`/api/skills/${skillId}/files?fileId=${fileId}`, {
-        method: "DELETE",
-      });
-      onFilesChange();
+      await fetch(`/api/skills/${skillId}/files?fileId=${fileId}`, { method: "DELETE" });
+      refresh();
     } catch (e) {
       console.error("Delete failed:", e);
     }
@@ -83,82 +67,84 @@ export function FileManager({ skillId, files, fileType, onFilesChange }: FileMan
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
-    if (e.dataTransfer.files.length > 0) {
-      handleUpload(e.dataTransfer.files);
-    }
+    if (e.dataTransfer.files.length > 0) handleUpload(e.dataTransfer.files);
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-          <Icon className="w-4 h-4 text-indigo-400" />
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+        <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#4A4744', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {FILE_TYPE_LABELS[fileType]}
-        </h3>
-        <p className="text-xs text-zinc-600 mt-1">{FILE_TYPE_DESCRIPTIONS[fileType]}</p>
+        </label>
+        <button
+          onClick={() => inputRef.current?.click()}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: '#F4F2EE', border: '1px solid #E8E4DF', borderRadius: '7px',
+            padding: '6px 12px', fontSize: '12px', fontWeight: 500,
+            cursor: 'pointer', fontFamily: 'inherit', color: '#4A4744',
+          }}
+        >
+          <Upload size={13} /> Adicionar ficheiro
+        </button>
       </div>
 
-      {/* Drop Zone */}
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        style={{ display: 'none' }}
+        onChange={(e) => e.target.files && handleUpload(e.target.files)}
+      />
+
+      {/* Drop zone shown when dragging */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
         onDragLeave={() => setDragActive(false)}
         onDrop={handleDrop}
+        style={{
+          border: `2px dashed ${dragActive ? '#1E4DB7' : '#E8E4DF'}`,
+          borderRadius: '12px', padding: '24px',
+          display: filteredFiles.length === 0 || dragActive ? 'flex' : 'none',
+          flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', transition: 'all 0.15s',
+          background: dragActive ? 'rgba(30,77,183,0.04)' : 'transparent',
+          marginBottom: '14px',
+        }}
         onClick={() => inputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all ${
-          dragActive
-            ? "border-indigo-500 bg-indigo-500/5"
-            : "border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900/40"
-        }`}
       >
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={(e) => e.target.files && handleUpload(e.target.files)}
-        />
         {uploading ? (
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500" />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E4DB7" strokeWidth="2" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite' }}>
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
         ) : (
           <>
-            <Upload className="w-6 h-6 text-zinc-600 mb-2" />
-            <p className="text-sm text-zinc-500">
-              Arraste ficheiros aqui ou <span className="text-indigo-400">clique para selecionar</span>
+            <FolderOpen size={24} color="#9A9490" style={{ marginBottom: '8px' }} />
+            <p style={{ fontSize: '13px', color: '#9A9490' }}>
+              {filteredFiles.length === 0 ? `Nenhum ficheiro de ${FILE_TYPE_LABELS[fileType].toLowerCase()} adicionado.` : 'Arraste ficheiros aqui'}
             </p>
           </>
         )}
       </div>
 
-      {/* File List */}
-      {filteredFiles.length > 0 ? (
-        <div className="space-y-2">
+      {/* File list */}
+      {filteredFiles.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {filteredFiles.map((file) => (
-            <div
-              key={file.id}
-              className="flex items-center justify-between bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 group hover:border-zinc-700 transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <Icon className="w-4 h-4 text-zinc-500 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm text-zinc-300 truncate font-mono">{file.path}</p>
-                  {file.mimeType && (
-                    <p className="text-xs text-zinc-600">{file.mimeType}</p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => handleDelete(file.id)}
-                className="shrink-0 p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
+            <div key={file.id} style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 14px', background: '#fff', border: '1px solid #E8E4DF',
+              borderRadius: '8px',
+            }}>
+              <FileText size={14} color="#9A9490" />
+              <span style={{ fontSize: '13px', color: '#4A4744', flex: 1 }}>{file.path}</span>
+              <button onClick={() => handleDelete(file.id)} style={{
+                background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', display: 'flex', padding: 0,
+              }}>
+                <Trash2 size={13} />
               </button>
             </div>
           ))}
-        </div>
-      ) : (
-        <div className="text-center py-6 text-zinc-600 text-sm">
-          <FolderOpen className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          Nenhum ficheiro de {FILE_TYPE_LABELS[fileType].toLowerCase()} adicionado.
         </div>
       )}
     </div>

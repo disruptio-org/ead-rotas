@@ -4,13 +4,16 @@ import { useState, useCallback } from "react";
 import { FileText, Eye } from "lucide-react";
 
 interface SkillMdEditorProps {
-  content: string;
+  value: string;
   onChange: (content: string) => void;
   readOnly?: boolean;
+  // Legacy support
+  content?: string;
 }
 
-export function SkillMdEditor({ content, onChange, readOnly }: SkillMdEditorProps) {
+export function SkillMdEditor({ value, content, onChange, readOnly }: SkillMdEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
+  const effectiveContent = value ?? content ?? "";
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -19,74 +22,80 @@ export function SkillMdEditor({ content, onChange, readOnly }: SkillMdEditorProp
     [onChange]
   );
 
-  // Simple markdown-to-HTML renderer for preview
   const renderPreview = (md: string) => {
     return md
-      .replace(/^### (.+)$/gm, '<h3 class="text-base font-bold text-zinc-200 mt-4 mb-2">$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold text-zinc-100 mt-6 mb-3 border-b border-zinc-800 pb-2">$1</h2>')
-      .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold text-white mt-6 mb-4">$1</h1>')
-      .replace(/^---$/gm, '<hr class="border-zinc-800 my-4" />')
-      .replace(/^- (.+)$/gm, '<li class="text-zinc-400 text-sm ml-4">• $1</li>')
-      .replace(/^\d+\.\s(.+)$/gm, '<li class="text-zinc-400 text-sm ml-4 list-decimal">$1</li>')
-      .replace(/`([^`]+)`/g, '<code class="bg-zinc-800 text-indigo-300 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>')
-      .replace(/\*\*([^*]+)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
-      .replace(/<!--(.+?)-->/g, '<span class="text-zinc-600 text-xs italic">$1</span>')
+      .replace(/^### (.+)$/gm, '<h3 style="font-size:14px;font-weight:700;color:#1A1714;margin:16px 0 8px">$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2 style="font-size:16px;font-weight:700;color:#1A1714;margin:20px 0 12px;border-bottom:1px solid #E8E4DF;padding-bottom:8px">$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1 style="font-size:18px;font-weight:700;color:#1A1714;margin:20px 0 16px">$1</h1>')
+      .replace(/^---$/gm, '<hr style="border-color:#E8E4DF;margin:16px 0" />')
+      .replace(/^- (.+)$/gm, '<li style="color:#4A4744;font-size:13px;margin-left:16px">• $1</li>')
+      .replace(/^\d+\.\s(.+)$/gm, '<li style="color:#4A4744;font-size:13px;margin-left:16px;list-style:decimal">$1</li>')
+      .replace(/`([^`]+)`/g, '<code style="background:#F4F2EE;color:#1E4DB7;padding:1px 4px;border-radius:3px;font-size:12px;font-family:monospace">$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#1A1714;font-weight:600">$1</strong>')
       .replace(/\n/g, "<br />");
   };
 
   return (
-    <div className="space-y-3">
+    <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs text-zinc-500">
-          <FileText className="w-3.5 h-3.5" />
-          <span className="font-mono">SKILL.md</span>
-          <span className="text-zinc-700">·</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#9A9490' }}>
+          <FileText size={14} />
+          <span style={{ fontFamily: 'monospace' }}>SKILL.md</span>
+          <span>·</span>
           <span>Frontmatter YAML + Markdown body</span>
         </div>
         <button
           type="button"
           onClick={() => setShowPreview(!showPreview)}
-          className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors ${
-            showPreview
-              ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-              : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-          }`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px',
+            padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontFamily: 'inherit',
+            background: showPreview ? 'rgba(30,77,183,0.08)' : 'transparent',
+            color: showPreview ? '#1E4DB7' : '#9A9490',
+            border: showPreview ? '1px solid rgba(30,77,183,0.2)' : '1px solid transparent',
+          }}
         >
-          <Eye className="w-3.5 h-3.5" />
+          <Eye size={14} />
           {showPreview ? "Preview ON" : "Preview"}
         </button>
       </div>
 
       {/* Editor + Preview */}
-      <div className={`grid gap-4 ${showPreview ? "grid-cols-2" : "grid-cols-1"}`}>
-        {/* Editor */}
-        <div className="relative">
+      <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: showPreview ? '1fr 1fr' : '1fr' }}>
+        <div style={{ position: 'relative' }}>
           <textarea
-            value={content}
+            value={effectiveContent}
             onChange={handleChange}
             readOnly={readOnly}
             spellCheck={false}
             rows={showPreview ? 24 : 20}
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-emerald-300 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono text-sm leading-relaxed resize-y"
+            style={{
+              width: '100%', background: '#1A1714', border: 'none', borderRadius: '12px',
+              padding: '16px 20px', fontSize: '13px', color: '#C8D6C8',
+              fontFamily: 'monospace', outline: 'none', resize: 'vertical',
+              lineHeight: 1.7, boxSizing: 'border-box',
+            }}
             placeholder={`---\nname: my-skill\ndescription: What this skill does\n---\n\n# Skill Instructions\n\nWrite your instructions here...`}
           />
-          {/* Frontmatter highlight indicator */}
-          {content.startsWith("---") && (
-            <div className="absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          {effectiveContent.startsWith("---") && (
+            <div style={{
+              position: 'absolute', top: '12px', right: '12px',
+              padding: '2px 8px', borderRadius: '4px', fontSize: '10px',
+              fontFamily: 'monospace', background: 'rgba(30,77,183,0.08)',
+              color: '#1E4DB7', border: '1px solid rgba(30,77,183,0.2)',
+            }}>
               YAML ✓
             </div>
           )}
         </div>
-
-        {/* Preview */}
         {showPreview && (
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5 overflow-y-auto max-h-[600px]">
-            <div className="text-xs text-zinc-600 mb-3 uppercase tracking-wider font-medium">Preview</div>
-            <div
-              className="prose prose-invert prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: renderPreview(content) }}
-            />
+          <div style={{
+            background: '#fff', border: '1px solid #E8E4DF', borderRadius: '12px',
+            padding: '20px', overflowY: 'auto', maxHeight: '600px',
+          }}>
+            <div style={{ fontSize: '11px', color: '#9A9490', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600 }}>Preview</div>
+            <div dangerouslySetInnerHTML={{ __html: renderPreview(effectiveContent) }} />
           </div>
         )}
       </div>

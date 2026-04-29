@@ -1,7 +1,5 @@
 "use client";
 
-import { ReactNode } from "react";
-
 export type TabId = "overview" | "instructions" | "references" | "assets" | "scripts" | "io" | "versions";
 
 interface Tab {
@@ -15,7 +13,7 @@ const TABS: Tab[] = [
   { id: "references", label: "References" },
   { id: "assets", label: "Assets" },
   { id: "scripts", label: "Scripts" },
-  { id: "io", label: "I/O Config" },
+  { id: "io", label: "I / O" },
   { id: "versions", label: "Versions" },
 ];
 
@@ -26,16 +24,22 @@ interface SkillTabsProps {
 
 export function SkillTabs({ activeTab, onTabChange }: SkillTabsProps) {
   return (
-    <div className="flex gap-1 border-b border-zinc-800 overflow-x-auto scrollbar-none">
+    <div style={{
+      background: '#fff', borderBottom: '1px solid #E8E4DF',
+      display: 'flex', gap: '2px', padding: '0 20px', flexShrink: 0, overflowX: 'auto',
+    }}>
       {TABS.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
-          className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-all duration-200 border-b-2 ${
-            activeTab === tab.id
-              ? "border-indigo-500 text-indigo-400 bg-indigo-500/5"
-              : "border-transparent text-zinc-500 hover:text-zinc-300 hover:border-zinc-700"
-          }`}
+          style={{
+            padding: '12px 16px', background: 'none', border: 'none',
+            fontSize: '13px', fontWeight: activeTab === tab.id ? 600 : 500,
+            color: activeTab === tab.id ? '#1E4DB7' : '#7A7470',
+            cursor: 'pointer', fontFamily: 'inherit',
+            borderBottom: activeTab === tab.id ? '2px solid #1E4DB7' : '2px solid transparent',
+            whiteSpace: 'nowrap',
+          }}
         >
           {tab.label}
         </button>

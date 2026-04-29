@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Code2, ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { Code2, ArrowLeft, ArrowRight, Loader2, Sparkles, Check } from "lucide-react";
 
 const TEMPLATES = [
   { id: "empty", label: "Vazia", desc: "Skill em branco." },
@@ -41,77 +41,196 @@ export default function NewSkillPage() {
   };
 
   return (
-    <div className="p-10 w-full h-full">
-      <div className="max-w-2xl mx-auto space-y-8">
-        <Link href="/skills" className="inline-flex items-center text-sm font-medium text-zinc-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Voltar a Skills
-        </Link>
-        <div className="border-b border-zinc-800 pb-6 flex items-center space-x-4">
-          <div className="bg-indigo-500/10 p-3 rounded-2xl text-indigo-400"><Sparkles className="w-8 h-8" /></div>
+    <div style={{ padding: '40px 48px', maxWidth: '900px', margin: '0 auto' }}>
+      <Link
+        href="/skills"
+        style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          color: '#7A7470', textDecoration: 'none', fontSize: '13px', fontWeight: 500,
+          paddingBottom: '24px',
+        }}
+      >
+        <ArrowLeft size={15} /> Voltar a Skills
+      </Link>
+
+      <div style={{
+        background: '#fff', borderRadius: '16px', border: '1px solid #E8E4DF',
+        overflow: 'hidden', maxWidth: '640px',
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '16px',
+          padding: '28px', borderBottom: '1px solid #F4F2EE',
+        }}>
+          <div style={{
+            width: '52px', height: '52px', borderRadius: '14px',
+            background: 'rgba(30,77,183,0.08)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', color: '#1E4DB7', flexShrink: 0,
+          }}>
+            <Sparkles size={24} />
+          </div>
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Criar Nova Skill</h1>
-            <p className="text-zinc-400 mt-1">Passo {step} de 2</p>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1A1714', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+              Criar Nova Skill
+            </h1>
+            <p style={{ color: '#7A7470', fontSize: '13px' }}>Passo {step} de 2</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <div className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-indigo-500" : "bg-zinc-800"}`} />
-          <div className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-indigo-500" : "bg-zinc-800"}`} />
+
+        {/* Step indicators */}
+        <div style={{ display: 'flex', gap: '8px', padding: '0 28px', paddingTop: '20px' }}>
+          {[1, 2].map(n => (
+            <div key={n} style={{
+              flex: 1, height: '4px', borderRadius: '99px',
+              background: step >= n ? '#1E4DB7' : '#E8E4DF',
+              transition: 'background 0.2s',
+            }} />
+          ))}
         </div>
 
-        {step === 1 && (
-          <div className="space-y-6">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300">Nome da Skill</label>
-              <input type="text" placeholder="Ex: DSC Rotas" value={formData.displayName}
-                onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" autoFocus />
-              {slug && <p className="text-xs text-zinc-600 font-mono">Slug: <span className="text-zinc-400">{slug}</span></p>}
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300">Descrição (trigger)</label>
-              <textarea rows={3} placeholder="Quando e como usar esta skill..." value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" />
-            </div>
-            <div className="pt-4 flex justify-end">
-              <button onClick={() => setStep(2)} disabled={!formData.displayName.trim()}
-                className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white rounded-xl transition-colors">
-                Seguinte <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-6">
-            <div>
-              <label className="text-sm font-medium text-zinc-300 mb-4 block">Template</label>
-              <div className="grid grid-cols-2 gap-3">
-                {TEMPLATES.map((t) => (
-                  <button key={t.id} onClick={() => setFormData({ ...formData, template: t.id })}
-                    className={`text-left p-4 rounded-xl border transition-all ${formData.template === t.id ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500/30" : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-600"}`}>
-                    <div className="text-sm font-bold text-zinc-200 mb-1">{t.label}</div>
-                    <div className="text-xs text-zinc-500">{t.desc}</div>
-                  </button>
-                ))}
+        <div style={{ padding: '28px' }}>
+          {step === 1 && (
+            <>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A4744', marginBottom: '7px' }}>
+                  Nome da Skill <span style={{ color: '#1E4DB7' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="ex. DSC Rotas"
+                  value={formData.displayName}
+                  onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                  autoFocus
+                  style={{
+                    width: '100%', background: '#F9F8F5', border: '1px solid #E8E4DF',
+                    borderRadius: '9px', padding: '10px 14px', fontSize: '13.5px',
+                    color: '#1A1714', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+                {slug && (
+                  <div style={{ fontSize: '11px', color: '#9A9490', fontFamily: 'monospace', marginTop: '6px' }}>
+                    Slug: <span style={{ color: '#4A4744' }}>{slug}</span>
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-2">
-              <div className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Resumo</div>
-              <div className="text-sm"><span className="text-zinc-500">Nome:</span> <span className="text-white font-medium">{formData.displayName}</span></div>
-              <div className="text-sm"><span className="text-zinc-500">Slug:</span> <span className="text-zinc-300 font-mono">{slug}</span></div>
-            </div>
-            <div className="pt-4 flex justify-between">
-              <button onClick={() => setStep(1)} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm text-zinc-400 bg-zinc-800 rounded-xl hover:bg-zinc-700">
-                <ArrowLeft className="w-4 h-4" /> Anterior
-              </button>
-              <button onClick={handleCreate} disabled={loading}
-                className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white rounded-xl transition-colors shadow-sm">
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> A criar...</> : <><Code2 className="w-4 h-4" /> Criar Skill</>}
-              </button>
-            </div>
-          </div>
-        )}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A4744', marginBottom: '7px' }}>
+                  Descrição (trigger)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Quando e como usar esta skill..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  style={{
+                    width: '100%', background: '#F9F8F5', border: '1px solid #E8E4DF',
+                    borderRadius: '9px', padding: '10px 14px', fontSize: '13.5px',
+                    color: '#1A1714', fontFamily: 'inherit', outline: 'none',
+                    resize: 'vertical', lineHeight: 1.6, boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setStep(2)}
+                  disabled={!formData.displayName.trim()}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: !formData.displayName.trim() ? '#E8E4DF' : '#1E4DB7',
+                    color: !formData.displayName.trim() ? '#9A9490' : '#fff',
+                    border: 'none', borderRadius: '9px', padding: '9px 18px',
+                    fontSize: '13px', fontWeight: 600, cursor: !formData.displayName.trim() ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Seguinte <ArrowRight size={14} />
+                </button>
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A4744', marginBottom: '10px' }}>
+                  Template
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {TEMPLATES.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setFormData({ ...formData, template: t.id })}
+                      style={{
+                        textAlign: 'left', padding: '14px', borderRadius: '10px',
+                        border: formData.template === t.id ? '2px solid #1E4DB7' : '1px solid #E8E4DF',
+                        background: formData.template === t.id ? 'rgba(30,77,183,0.04)' : '#fff',
+                        cursor: 'pointer', fontFamily: 'inherit', position: 'relative',
+                      }}
+                    >
+                      {formData.template === t.id && (
+                        <div style={{
+                          position: 'absolute', top: '10px', right: '10px',
+                          width: '18px', height: '18px', borderRadius: '50%',
+                          background: '#1E4DB7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Check size={10} color="#fff" />
+                        </div>
+                      )}
+                      <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1A1714', marginBottom: '4px' }}>{t.label}</div>
+                      <div style={{ fontSize: '12px', color: '#7A7470' }}>{t.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div style={{
+                background: '#F9F8F5', borderRadius: '10px', padding: '14px',
+                marginBottom: '20px',
+              }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#9A9490', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>
+                  Resumo
+                </div>
+                <div style={{ fontSize: '13px', marginBottom: '4px' }}>
+                  <span style={{ color: '#7A7470' }}>Nome:</span>{' '}
+                  <span style={{ color: '#1A1714', fontWeight: 600 }}>{formData.displayName}</span>
+                </div>
+                <div style={{ fontSize: '13px' }}>
+                  <span style={{ color: '#7A7470' }}>Slug:</span>{' '}
+                  <span style={{ fontFamily: 'monospace', color: '#4A4744' }}>{slug}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <button
+                  onClick={() => setStep(1)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: '#F4F2EE', border: '1px solid #E8E4DF', borderRadius: '9px',
+                    padding: '9px 16px', fontSize: '13px', fontWeight: 500,
+                    cursor: 'pointer', fontFamily: 'inherit', color: '#4A4744',
+                  }}
+                >
+                  <ArrowLeft size={14} /> Anterior
+                </button>
+                <button
+                  onClick={handleCreate}
+                  disabled={loading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: loading ? '#E8E4DF' : '#1E4DB7',
+                    color: loading ? '#9A9490' : '#fff',
+                    border: 'none', borderRadius: '9px', padding: '9px 18px',
+                    fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {loading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> A criar...</> : <><Code2 size={14} /> Criar Skill</>}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
