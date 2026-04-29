@@ -1,43 +1,37 @@
 #!/bin/sh
 # Railway startup script
-# Ensures SQLite database exists on the persistent volume before starting the app
 
 DATA_DIR="${DATA_DIR:-/app/data}"
 DB_FILE="$DATA_DIR/prod.db"
 
-echo "[startup] Data directory: $DATA_DIR"
-echo "[startup] Database file: $DB_FILE"
-echo "[startup] Current user: $(whoami)"
-echo "[startup] Listing /app/data:"
-ls -la "$DATA_DIR" 2>/dev/null || echo "[startup] /app/data does not exist yet"
+echo "[startup] PORT=${PORT:-not set}"
+echo "[startup] HOSTNAME=${HOSTNAME:-not set}"
+echo "[startup] DATA_DIR=$DATA_DIR"
+echo "[startup] DB_FILE=$DB_FILE"
 
 # Ensure data directory exists
-mkdir -p "$DATA_DIR" || echo "[startup] WARNING: could not create $DATA_DIR"
+mkdir -p "$DATA_DIR" 2>/dev/null || true
 
-# Wait for Railway volume mount (mounts happen asynchronously)
-echo "[startup] Waiting for volume to be writable..."
+# Wait for volume to be writable
 RETRIES=0
-while [ $RETRIES -lt 15 ]; do
+while [ $RETRIES -lt 10 ]; do
   if touch "$DATA_DIR/.probe" 2>/dev/null; then
     rm -f "$DATA_DIR/.probe"
-    echo "[startup] Volume is writable."
+    echo "[startup] Volume writable."
     break
   fi
   RETRIES=$((RETRIES + 1))
-  echo "[startup] Volume not writable yet (attempt $RETRIES/15)..."
   sleep 2
 done
 
-# Initialize database (non-fatal — server starts regardless)
+# Initialize database (non-fatal)
 if [ ! -f "$DB_FILE" ]; then
-  echo "[startup] Database not found. Running initial schema push..."
-  DATABASE_URL="file:$DB_FILE" node ./node_modules/prisma/build/index.js db push --skip-generate 2>&1 || echo "[startup] WARNING: prisma db push failed, server will start anyway"
-  echo "[startup] Database init complete."
+  echo "[startup] Creating database..."
+  DATABASE_URL="file:$DB_FILE" node ./node_modules/prisma/build/index.js db push --skip-generate 2>&1 || echo "[startup] WARNING: db push failed"
 else
-  echo "[startup] Database found. Syncing schema..."
+  echo "[startup] Database exists, syncing schema..."
   DATABASE_URL="file:$DB_FILE" node ./node_modules/prisma/build/index.js db push --skip-generate --accept-data-loss 2>&1 || true
-  echo "[startup] Schema sync complete."
 fi
 
-echo "[startup] Starting Next.js server on port ${PORT:-3000}..."
+echo "[startup] Starting server..."
 exec node server.js

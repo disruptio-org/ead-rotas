@@ -26,20 +26,16 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-ENV DATA_DIR=/app/data
 
-
-
-# Copy public assets (skills templates, imports, outputs — writable at runtime)
+# Copy public assets
 COPY --from=builder /app/public ./public
 
 # Copy standalone server output
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Copy Prisma schema + client for runtime (db push + client usage)
+# Copy Prisma schema + client for runtime
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
@@ -55,5 +51,4 @@ RUN mkdir -p /app/data /app/public/outputs /app/public/imports /app/public/skill
 EXPOSE 3000
 
 # Use startup script (handles DB init + starts server)
-CMD ["sh", "start.sh"]
-
+CMD ["sh", "./start.sh"]
