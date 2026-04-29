@@ -45,9 +45,9 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
-# Copy startup script
+# Copy startup script (strip Windows CRLF line endings)
 COPY --from=builder /app/start.sh ./start.sh
-RUN chmod +x ./start.sh
+RUN sed -i 's/\r$//' ./start.sh && chmod +x ./start.sh
 
 # Create writable directories for runtime data
 RUN mkdir -p /app/data /app/public/outputs /app/public/imports /app/public/skills
