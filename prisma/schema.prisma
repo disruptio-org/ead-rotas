@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Agent {
+  id                 String       @id @default(uuid())
+  name               String
+  description        String?
+  systemInstructions String?
+  status             String       @default("active")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  agentSkills        AgentSkill[]
+  executions         Execution[]
+}
+
+model Skill {
+  id               String         @id @default(uuid())
+  slug             String         @unique
+  displayName      String
+  description      String?
+  sourceType       String         @default("native") // native, imported_chatgpt
+  status           String         @default("draft") // draft, validated, published, deprecated, archived
+  currentVersionId String?
+  tags             String?        // JSON array as string e.g. ["logistics","docx"]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  versions         SkillVersion[]
+  agentSkills      AgentSkill[]
+}
+
+model SkillVersion {
+  id                  String       @id @default(uuid())
+  skillId             String
+  versionNumber       String       // Semantic: "1.0.0"
+  skillMdContent      String       // The SKILL.md content (frontmatter + body)
+  openaiYaml          String?      // agents/openai.yaml content
+  manifestJson        String?      // Internal manifest
+  sourceArchiveUrl    String?      // Path to original imported ZIP
+  compatibilityStatus String?      // fully_compatible, partially_compatible, incompatible
+  validationReport    String?      // JSON validation report
+  inputSchema         String?      // JSON schema for accepted inputs
+  outputSchema        String?      // JSON schema for expected outputs
+  createdAt           DateTime     @default(now())
+  createdBy           String?
+
+  skill           Skill        @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  files           SkillFile[]
+  executions      Execution[]
+}
+
+model SkillFile {
+  id              String       @id @default(uuid())
+  skillVersionId  String
+  path            String       // e.g. "references/regras.md", "assets/template.docx"
+  fileType        String       // reference, asset, script, config, root
+  mimeType        String?
+  sizeBytes       Int?         // File size in bytes
+  storagePath     String       // Filesystem path relative to public/skills/
+  checksum        String?
+  createdAt       DateTime     @default(now())
+
+  skillVersion    SkillVersion @relation(fields: [skillVersionId], references: [id], onDelete: Cascade)
+}
+
+model AgentSkill {
+  id              String   @id @default(uuid())
+  agentId         String
+  skillId         String
+  enabled         Boolean  @default(true)
+  priority        Int      @default(0)
+  configOverride  String?  // JSON string for per-agent overrides
+
+  agent           Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  skill           Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, skillId])
+}
+
+model Execution {
+  id              String     @id @default(uuid())
+  agentId         String
+  skillVersionId  String?
+  status          String     @default("running") // running, completed, failed
+  summary         String?
+  rawOutput       String?    // Storing JSON string for SQLite
+  loadingTrace    String?    // JSON: which phases loaded, which files accessed
+  scriptsCalled   String?    // JSON: scripts invoked during execution
+  createdAt       DateTime   @default(now())
+  completedAt     DateTime?
+
+  agent           Agent      @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  skillVersion    SkillVersion? @relation(fields: [skillVersionId], references: [id])
+  files           ExecutionFile[]
+}
+
+model ExecutionFile {
+  id          String    @id @default(uuid())
+  executionId String
+  fileUrl     String
+  fileName    String
+  role        String    // input, output, reference
+
+  execution   Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+}
+
+model SkillImportJob {
+  id                  String    @id @default(uuid())
+  uploadedFileName    String
+  uploadedFileUrl     String?   // Path to preserved original ZIP
+  status              String    @default("pending") // pending, parsing, ready, committed, failed
+  parsedResult        String?   // JSON: parsed skill summary
+  validationReport    String?   // JSON: full validation report
+  compatibilityStatus String?   // fully_compatible, partially_compatible, incompatible
+  errorMessage        String?
+  startedAt           DateTime  @default(now())
+  completedAt         DateTime?
+  createdBy           String?
+}

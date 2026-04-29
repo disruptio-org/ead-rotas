@@ -1,0 +1,35 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build artifacts
+.next
+out
+
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dev files
+*.md
+!README.md
+resources/
+dev-output.log
+tsconfig.tsbuildinfo
+
+# Env (Railway sets these via dashboard)
+.env
+.env.*
+
+# Gemini
+.gemini/
