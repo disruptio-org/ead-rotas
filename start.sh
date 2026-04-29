@@ -16,11 +16,11 @@ mkdir -p "$DATA_DIR"
 # If the database doesn't exist yet, create it via Prisma
 if [ ! -f "$DB_FILE" ]; then
   echo "[startup] Database not found. Running initial migration..."
-  DATABASE_URL="file:$DB_FILE" npx prisma db push --skip-generate
+  DATABASE_URL="file:$DB_FILE" node ./node_modules/prisma/build/index.js db push --skip-generate
   echo "[startup] Database created successfully."
 else
   echo "[startup] Database found. Checking for schema changes..."
-  DATABASE_URL="file:$DB_FILE" npx prisma db push --skip-generate --accept-data-loss 2>/dev/null || true
+  DATABASE_URL="file:$DB_FILE" node ./node_modules/prisma/build/index.js db push --skip-generate --accept-data-loss 2>/dev/null || true
   echo "[startup] Schema sync complete."
 fi
 
