@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rotas — by Papiro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Figtree', sans-serif; background: #F4F2EE; -webkit-font-smoothing: antialiased; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D8D4CF; border-radius: 99px; }
+    input, textarea, button { font-family: 'Figtree', sans-serif; }
+    textarea { resize: vertical; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="components/AppShell.jsx"></script>
+  <script type="text/babel" src="components/Dashboard.jsx"></script>
+  <script type="text/babel" src="components/Agents.jsx"></script>
+  <script type="text/babel" src="components/Skills.jsx"></script>
+  <script type="text/babel" src="components/History.jsx"></script>
+
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "primaryColor": "#D4460E",
+      "secondaryColor": "#1E4DB7",
+      "sidebarDark": true,
+      "compactMode": false
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [page, setPage] = React.useState('dashboard');
+      const [selectedAgent, setSelectedAgent] = React.useState(null);
+      const [selectedSkill, setSelectedSkill] = React.useState(null);
+      const [tweaks, setTweaksState] = React.useState(TWEAK_DEFAULTS);
+      const [showTweaks, setShowTweaks] = React.useState(false);
+
+      // Tweaks panel protocol
+      React.useEffect(() => {
+        const handler = (e) => {
+          if (e.data?.type === '__activate_edit_mode') setShowTweaks(true);
+          if (e.data?.type === '__deactivate_edit_mode') setShowTweaks(false);
+        };
+        window.addEventListener('message', handler);
+        window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+        return () => window.removeEventListener('message', handler);
+      }, []);
+
+      const setTweak = (key, value) => {
+        const next = { ...tweaks, [key]: value };
+        setTweaksState(next);
+        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: value } }, '*');
+      };
+
+      // CSS variable injection for colors
+      React.useEffect(() => {
+        document.documentElement.style.setProperty('--primary', tweaks.primaryColor);
+        document.documentElement.style.setProperty('--secondary', tweaks.secondaryColor);
+      }, [tweaks.primaryColor, tweaks.secondaryColor]);
+
+      function renderPage() {
+        switch (page) {
+          case 'dashboard':      return <Dashboard setPage={setPage} />;
+          case 'agents':         return <AgentsList setPage={setPage} setSelectedAgent={setSelectedAgent} />;
+          case 'agents-new':     return <CreateAgent setPage={setPage} />;
+          case 'agent-workspace':return <AgentWorkspace agent={selectedAgent} setPage={setPage} />;
+          case 'skills':         return <SkillsList setPage={setPage} setSelectedSkill={setSelectedSkill} />;
+          case 'skills-new':     return <CreateSkill setPage={setPage} />;
+          case 'skill-editor':   return <SkillEditor skill={selectedSkill} setPage={setPage} />;
+          case 'history':        return <HistoryPage setPage={setPage} />;
+          case 'settings':       return <SettingsPage />;
+          default:               return <Dashboard setPage={setPage} />;
+        }
+      }
+
+      // Full-bleed pages (own layout)
+      const fullBleed = ['agent-workspace', 'skill-editor', 'history'].includes(page);
+
+      return (
+        <AppShell page={page} setPage={setPage}>
+          {renderPage()}
+          {showTweaks && <TweaksPanel tweaks={tweaks} setTweak={setTweak} onClose={() => {
+            setShowTweaks(false);
+            window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+          }} />}
+        </AppShell>
+      );
+    }
+
+    // ── Settings page ──────────────────────────────────────────────────────────
+    function SettingsPage() {
+      return (
+        <div style={{ padding:'40px 48px', maxWidth:'680px', margin:'0 auto' }}>
+          <h1 style={{ fontSize:'26px', fontWeight:'800', color:'#1A1714', letterSpacing:'-0.02em', marginBottom:'6px' }}>Definições</h1>
+          <p style={{ color:'#7A7470', fontSize:'14px', marginBottom:'32px' }}>Configurações da plataforma Rotas.</p>
+
+          {[
+            { label:'Organização', value:'EAD — Empresa de Águas do Douro' },
+            { label:'Ambiente', value:'Produção' },
+            { label:'URL da API', value:'https://ead-rotas-production.up.railway.app' },
+            { label:'Versão', value:'v1.0.0' },
+          ].map(row => (
+            <div key={row.label} style={{ background:'#fff', border:'1px solid #E8E4DF', borderRadius:'10px', padding:'16px 20px', marginBottom:'10px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <span style={{ fontSize:'13.5px', fontWeight:'600', color:'#4A4744' }}>{row.label}</span>
+              <span style={{ fontSize:'13px', color:'#9A9490', fontFamily: row.label.includes('URL') || row.label === 'Versão' ? 'monospace' : 'inherit' }}>{row.value}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // ── Tweaks panel ───────────────────────────────────────────────────────────
+    function TweaksPanel({ tweaks, setTweak, onClose }) {
+      const [pos, setPos] = React.useState({ x: window.innerWidth - 280, y: window.innerHeight - 380 });
+      const dragRef = React.useRef(null);
+
+      const startDrag = (e) => {
+        const startX = e.clientX - pos.x, startY = e.clientY - pos.y;
+        const onMove = (ev) => setPos({ x: ev.clientX - startX, y: ev.clientY - startY });
+        const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+      };
+
+      return (
+        <div style={{ position:'fixed', left: pos.x, top: pos.y, width:'256px', background:'#fff', borderRadius:'14px', boxShadow:'0 8px 40px rgba(0,0,0,0.16)', border:'1px solid #E8E4DF', zIndex:9999, overflow:'hidden', userSelect:'none' }}>
+          <div onMouseDown={startDrag} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#F9F8F5', borderBottom:'1px solid #E8E4DF', cursor:'grab' }}>
+            <span style={{ fontSize:'12.5px', fontWeight:'700', color:'#4A4744', letterSpacing:'0.02em' }}>Tweaks</span>
+            <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#9A9490', display:'flex', padding:0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div style={{ padding:'16px' }}>
+            <div style={{ fontSize:'11px', fontWeight:'600', color:'#9A9490', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'10px' }}>Cores</div>
+
+            {[
+              { key:'primaryColor', label:'Cor primária (Agentes)' },
+              { key:'secondaryColor', label:'Cor secundária (Skills)' },
+            ].map(({ key, label }) => (
+              <div key={key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
+                <span style={{ fontSize:'12.5px', color:'#4A4744' }}>{label}</span>
+                <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                  <div style={{ width:'22px', height:'22px', borderRadius:'6px', background: tweaks[key], border:'1px solid rgba(0,0,0,0.1)', overflow:'hidden', position:'relative' }}>
+                    <input type="color" value={tweaks[key]} onChange={e => setTweak(key, e.target.value)}
+                      style={{ position:'absolute', inset:'-4px', width:'32px', height:'32px', opacity:0, cursor:'pointer' }} />
+                  </div>
+                  <code style={{ fontSize:'11px', color:'#9A9490' }}>{tweaks[key]}</code>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ height:'1px', background:'#F4F2EE', margin:'12px 0' }}></div>
+            <div style={{ fontSize:'11px', fontWeight:'600', color:'#9A9490', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'10px' }}>Layout</div>
+
+            {[
+              { key:'sidebarDark', label:'Sidebar escura' },
+              { key:'compactMode', label:'Modo compacto' },
+            ].map(({ key, label }) => (
+              <div key={key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
+                <span style={{ fontSize:'12.5px', color:'#4A4744' }}>{label}</span>
+                <button onClick={() => setTweak(key, !tweaks[key])} style={{
+                  width:'36px', height:'20px', borderRadius:'10px',
+                  background: tweaks[key] ? '#D4460E' : '#E8E4DF',
+                  border:'none', cursor:'pointer', position:'relative', transition:'background 0.2s',
+                }}>
+                  <div style={{ position:'absolute', top:'2px', left: tweaks[key] ? '18px':'2px', width:'16px', height:'16px', borderRadius:'50%', background:'#fff', transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }}></div>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -338,10 +338,10 @@ export default function SkillEditorPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {BUILTIN_SCRIPTS.map((script) => (
-                    <div key={script.id} style={{
+                    <div key={script.key} style={{
                       background: '#fff', border: '1px solid #E8E4DF', borderRadius: '10px', padding: '14px 16px',
                     }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#1A1714', marginBottom: '4px' }}>{script.name}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#1A1714', marginBottom: '4px' }}>{script.displayName}</div>
                       <div style={{ fontSize: '12px', color: '#7A7470' }}>{script.description}</div>
                     </div>
                   ))}
