@@ -382,7 +382,7 @@ export async function generateDocxOutputs(
       await writeFile(path.join(outputDir, fileName), buffer);
       generatedFiles.push({
         fileName,
-        downloadUrl: `/outputs/${executionId}/${fileName}`,
+        downloadUrl: `/api/files/outputs/${executionId}/${fileName}`,
       });
     }
 
@@ -398,7 +398,7 @@ export async function generateDocxOutputs(
       await writeFile(path.join(outputDir, fileName), buffer);
       generatedFiles.push({
         fileName,
-        downloadUrl: `/outputs/${executionId}/${fileName}`,
+        downloadUrl: `/api/files/outputs/${executionId}/${fileName}`,
       });
     }
   }
